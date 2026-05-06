@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Yer Man — Summer Cup</title>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Fredoka+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#FFD93D;--red:#FF4D4D;--blue:#3D9BE9;--green:#4CAF50;
+  --dark:#0d0d1a;--panel:#161628;--ink:#0d0d1a;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--dark);color:white;font-family:'Nunito',sans-serif;overflow:hidden;}
+
+/* ══ SCANLINES atmosphere ══ */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+}
+
+/* ══ SCREENS ══ */
+.screen{display:none;height:100%;flex-direction:column;}
+.screen.on{display:flex;}
+
+/* ══ LOBBY ══ */
+#lobby{
+  background:radial-gradient(ellipse at 50% 30%, #1a1040 0%, #0d0d1a 70%);
+  align-items:center;justify-content:center;gap:0;padding:20px;overflow-y:auto;
+}
+.lobby-inner{width:100%;max-width:480px;display:flex;flex-direction:column;align-items:center;gap:16px;}
+
+/* ── YER MAN character ── */
+.ym-wrap{
+  position:relative;width:160px;
+  animation:ymFloat 3s ease-in-out infinite;
+  filter:drop-shadow(0 15px 30px rgba(255,217,61,0.25));
+}
+@keyframes ymFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+
+.bubble{
+  position:absolute;top:-10px;left:155px;
+  background:white;color:#0d0d1a;
+  font-family:'Nunito',sans-serif;font-weight:800;font-size:0.78rem;
+  padding:8px 12px;border-radius:14px;min-width:160px;max-width:200px;
+  line-height:1.35;text-align:center;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  transition:opacity 0.3s;
+  z-index:10;
+}
+.bubble::before{
+  content:'';position:absolute;left:-8px;top:16px;
+  border:5px solid transparent;border-right-color:white;
+}
+
+/* Title */
+.ym-title{
+  font-family:'Boogaloo',cursive;font-size:3rem;
+  color:var(--gold);letter-spacing:1px;
+  text-shadow:0 0 40px rgba(255,217,61,0.5),3px 3px 0 rgba(0,0,0,0.5);
+  text-align:center;line-height:1;
+}
+.ym-sub{font-size:0.65rem;color:rgba(255,255,255,0.35);letter-spacing:3px;text-transform:uppercase;text-align:center;}
+
+/* Mode selector */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;}
+.mode-btn{
+  background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);
+  border-radius:14px;padding:12px 8px;cursor:pointer;text-align:center;
+  transition:all 0.15s;
+}
+.mode-btn:active,.mode-btn.sel{background:rgba(255,217,61,0.15);border-color:var(--gold);}
+.mode-icon{font-size:1.4rem;display:block;margin-bottom:4px;}
+.mode-name{font-family:'Fredoka One',cursive;font-size:0.9rem;color:var(--gold);}
+.mode-desc{font-size:0.62rem;color:rgba(255,255,255,0.45);margin-top:2px;line-height:1.3;}
+
+/* Import */
+.import-box{width:100%;background:rgba(255,255,255,0.04);border:2px dashed rgba(255,255,255,0.15);
+  border-radius:14px;padding:12px;}
+.import-box textarea{
+  width:100%;background:transparent;border:none;outline:none;
+  color:rgba(255,255,255,0.7);font-size:0.72rem;font-family:monospace;
+  resize:none;height:70px;
+}
+.import-label{font-size:0.65rem;color:rgba(255,255,255,0.4);margin-bottom:6px;display:block;letter-spacing:1px;text-transform:uppercase;}
+
+/* Buttons */
+.big-btn{
+  width:100%;padding:16px;border:none;border-radius:16px;
+  font-family:'Boogaloo',cursive;font-size:1.4rem;letter-spacing:1px;
+  cursor:pointer;transition:transform 0.1s,box-shadow 0.1s;
+  box-shadow:0 6px 20px rgba(0,0,0,0.4);
+}
+.big-btn:active{transform:scale(0.97);}
+.btn-go{background:linear-gradient(135deg,#FFD93D,#FF6B35);color:#0d0d1a;}
+.btn-sec{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);font-size:1rem;padding:12px;}
+
+/* Room code display */
+.room-code{
+  font-family:'Boogaloo',cursive;font-size:3.5rem;color:var(--gold);
+  letter-spacing:8px;text-align:center;
+  text-shadow:0 0 30px rgba(255,217,61,0.4);
+}
+.room-label{font-size:0.65rem;color:rgba(255,255,255,0.4);letter-spacing:2px;text-transform:uppercase;text-align:center;}
+
+/* Player list */
+.player-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;max-height:200px;overflow-y:auto;}
+.player-chip{
+  background:rgba(255,255,255,0.07);border-radius:10px;padding:8px 10px;
+  font-weight:800;font-size:0.82rem;display:flex;align-items:center;gap:6px;
+  animation:chipIn 0.3s ease;
+}
+@keyframes chipIn{from{transform:scale(0.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+.player-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;}
+
+/* ══ GAME SCREEN ══ */
+#game{background:#0d0d1a;position:relative;}
+
+/* Top bar */
+.gbar{
+  background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.07);
+  padding:8px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.gbar-ym{width:44px;flex-shrink:0;}
+.gbar-bubble{
+  background:rgba(255,255,255,0.08);border-radius:10px;padding:6px 10px;
+  font-size:0.72rem;font-weight:800;flex:1;line-height:1.3;color:rgba(255,255,255,0.85);
+  min-height:36px;display:flex;align-items:center;
+}
+.gbar-score{font-family:'Boogaloo',cursive;font-size:1.1rem;color:var(--gold);flex-shrink:0;}
+
+/* Timer */
+.timer-track{height:5px;background:rgba(255,255,255,0.1);flex-shrink:0;}
+.timer-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold),var(--red));transition:width 0.1s linear;width:100%;}
+
+/* Question */
+.q-wrap{flex:1;display:flex;flex-direction:column;padding:14px 16px 10px;overflow-y:auto;}
+.q-num{font-size:0.62rem;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.q-text{
+  font-family:'Fredoka One',cursive;font-size:1.55rem;color:white;
+  line-height:1.25;margin-bottom:16px;
+  animation:qDrop 0.3s ease;
+}
+@keyframes qDrop{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+
+/* Options */
+.opts{display:flex;flex-direction:column;gap:8px;}
+.opt{
+  background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.1);
+  border-radius:14px;padding:13px 14px;
+  font-family:'Nunito',sans-serif;font-weight:800;font-size:0.95rem;
+  color:white;display:flex;align-items:center;gap:10px;
+  cursor:pointer;text-align:left;width:100%;transition:all 0.1s;
+}
+.opt:active{transform:scale(0.98);}
+.opt.correct{background:rgba(76,175,80,0.25);border-color:var(--green);}
+.opt.wrong{background:rgba(255,77,77,0.2);border-color:var(--red);}
+.opt.reveal{background:rgba(76,175,80,0.15);border-color:rgba(76,175,80,0.5);}
+.opt-ltr{
+  width:26px;height:26px;border-radius:50%;
+  background:rgba(255,255,255,0.1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.7rem;font-weight:900;flex-shrink:0;
+}
+.opt.correct .opt-ltr{background:var(--green);}
+.opt.wrong .opt-ltr{background:var(--red);}
+.opt.reveal .opt-ltr{background:rgba(76,175,80,0.6);}
+
+/* Answer dots */
+.qdots{display:flex;gap:3px;padding:8px 16px 0;flex-shrink:0;}
+.qdot{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,0.1);}
+.qdot.ok{background:var(--green);}
+.qdot.no{background:var(--red);}
+.qdot.now{background:var(--gold);}
+
+/* Next btn */
+.nxt{
+  margin:12px 16px 16px;padding:14px;border:none;border-radius:14px;
+  background:linear-gradient(135deg,#FFD93D,#FF6B35);
+  color:#0d0d1a;font-family:'Boogaloo',cursive;font-size:1.2rem;
+  cursor:pointer;display:none;
+}
+.nxt.on{display:block;animation:pop 0.2s ease;}
+@keyframes pop{from{transform:scale(0.9);}to{transform:scale(1);}}
+
+/* ══ LEADERBOARD ══ */
+#leaderboard{
+  background:radial-gradient(ellipse at 50% 20%,#1a1040,#0d0d1a);
+  padding:20px 16px;overflow-y:auto;
+}
+.lb-title{
+  font-family:'Boogaloo',cursive;font-size:2rem;color:var(--gold);
+  text-align:center;margin-bottom:16px;
+  text-shadow:0 0 30px rgba(255,217,61,0.4);
+}
+.lb-row{
+  display:flex;align-items:center;gap:12px;
+  background:rgba(255,255,255,0.05);border-radius:12px;
+  padding:10px 14px;margin-bottom:7px;
+  animation:chipIn 0.3s ease;
+}
+.lb-pos{
+  font-family:'Boogaloo',cursive;font-size:1.4rem;
+  width:32px;text-align:center;flex-shrink:0;
+}
+.lb-pos.gold{color:var(--gold);}
+.lb-pos.silver{color:#ccc;}
+.lb-pos.bronze{color:#cd7f32;}
+.lb-name{font-weight:800;font-size:0.95rem;flex:1;}
+.lb-score{font-family:'Boogaloo',cursive;font-size:1.3rem;color:var(--gold);}
+.lb-bar-wrap{width:100%;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:4px;}
+.lb-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold),#FF6B35);transition:width 0.8s ease;}
+
+/* ══ RESULTS ══ */
+#results{
+  background:radial-gradient(ellipse at 50% 30%,#1a1040,#0d0d1a);
+  align-items:center;justify-content:center;padding:24px 20px;overflow-y:auto;
+}
+.res-inner{max-width:400px;width:100%;text-align:center;}
+.res-em{font-size:4rem;display:block;margin-bottom:6px;}
+.res-title{font-family:'Boogaloo',cursive;font-size:2rem;color:var(--gold);margin-bottom:4px;}
+.res-frac{font-family:'Boogaloo',cursive;font-size:3.5rem;line-height:1;}
+.res-stars{font-size:2rem;margin:6px 0;}
+.missed{
+  background:rgba(255,255,255,0.05);border-radius:12px;
+  padding:12px 14px;margin:14px 0;text-align:left;max-height:180px;overflow-y:auto;
+}
+.missed-hdr{font-size:0.62rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.missed-row{font-size:0.82rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.missed-q{color:rgba(255,255,255,0.45);font-size:0.72rem;}
+.missed-a{color:var(--green);}
+
+/* ══ PLAYER JOIN SCREEN ══ */
+#join{
+  background:radial-gradient(ellipse at 50% 30%,#1a1040,#0d0d1a);
+  align-items:center;justify-content:center;padding:30px 20px;
+}
+.join-inner{max-width:360px;width:100%;display:flex;flex-direction:column;align-items:center;gap:16px;}
+.join-ym{width:120px;animation:ymFloat 3s ease-in-out infinite;filter:drop-shadow(0 10px 20px rgba(255,217,61,0.2));}
+.join-title{font-family:'Boogaloo',cursive;font-size:2.2rem;color:var(--gold);text-align:center;}
+.join-input{
+  width:100%;padding:16px;border-radius:14px;border:2px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.07);color:white;
+  font-family:'Nunito',sans-serif;font-weight:800;font-size:1.1rem;
+  outline:none;text-align:center;
+}
+.join-input::placeholder{color:rgba(255,255,255,0.3);}
+.join-input:focus{border-color:var(--gold);}
+.join-wait{
+  font-family:'Fredoka One',cursive;font-size:1rem;
+  color:rgba(255,255,255,0.5);text-align:center;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:0.5;}50%{opacity:1;}}
+
+/* ══ FLASH OVERLAY ══ */
+.flash{
+  position:fixed;inset:0;z-index:9998;pointer-events:none;
+  opacity:0;transition:opacity 0.1s;
+}
+.flash.go{opacity:1;}
+
+@media(max-width:360px){
+  .q-text{font-size:1.3rem;}
+  .ym-title{font-size:2.4rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- FLASH -->
+<div class="flash" id="flash"></div>
+
+<!-- ══ HOST LOBBY ══ -->
+<div id="lobby" class="screen on">
+  <div class="lobby-inner">
+
+    <!-- YER MAN -->
+    <div class="ym-wrap">
+      <div class="bubble" id="lobby-bubble">Righ' — who's brave enough?</div>
+      <svg id="ym-svg-lobby" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Shadow -->
+        <ellipse cx="80" cy="196" rx="42" ry="6" fill="rgba(0,0,0,0.35)"/>
+        <!-- Body/suit -->
+        <path d="M30 140 Q26 175 24 195 L136 195 Q134 175 130 140 Q110 128 95 124 L88 150 L80 142 L72 150 L65 124 Q50 128 30 140Z" fill="#1c2951"/>
+        <!-- Lapels -->
+        <path d="M65 124 L72 150 L80 136 L70 122Z" fill="#111d3d"/>
+        <path d="M95 124 L88 150 L80 136 L90 122Z" fill="#111d3d"/>
+        <!-- Shirt -->
+        <path d="M70 122 L80 136 L90 122 L86 118 L80 126 L74 118Z" fill="#f5f5f5"/>
+        <!-- Tie -->
+        <path d="M77 120 L80 136 L83 120 L81 116 L79 116Z" fill="#e63946"/>
+        <!-- Pocket square -->
+        <path d="M100 148 L110 144 L112 155 L101 157Z" fill="#FFD93D" opacity="0.9"/>
+        <!-- Arms -->
+        <path d="M24 195 Q18 175 20 155 Q28 148 30 140Z" fill="#1c2951"/>
+        <path d="M136 195 Q142 175 140 155 Q132 148 130 140Z" fill="#1c2951"/>
+        <!-- Hands -->
+        <ellipse cx="19" cy="188" rx="9" ry="7" fill="#FDBCB4" transform="rotate(-15,19,188)"/>
+        <ellipse cx="141" cy="185" rx="9" ry="7" fill="#FDBCB4" transform="rotate(20,141,185)"/>
+        <!-- Pointing finger -->
+        <path d="M146 180 Q158 174 161 179 Q159 185 146 184Z" fill="#FDBCB4"/>
+        <!-- Neck -->
+        <rect x="68" y="104" width="24" height="24" rx="7" fill="#FDBCB4"/>
+        <!-- Head -->
+        <ellipse cx="80" cy="72" rx="48" ry="54" fill="#FDBCB4"/>
+        <!-- Ears -->
+        <ellipse cx="32" cy="74" rx="9" ry="12" fill="#FDBCB4"/>
+        <ellipse cx="32" cy="74" rx="5" ry="8" fill="#f0a090"/>
+        <ellipse cx="128" cy="74" rx="9" ry="12" fill="#FDBCB4"/>
+        <ellipse cx="128" cy="74" rx="5" ry="8" fill="#f0a090"/>
+        <!-- Hair — salt pepper, swept, bit of life -->
+        <ellipse cx="80" cy="26" rx="44" ry="24" fill="#888"/>
+        <path d="M36 38 Q40 14 62 10 Q80 6 98 10 Q120 14 124 38 Q104 22 80 24 Q56 22 36 38Z" fill="#999"/>
+        <path d="M56 12 Q75 6 100 11 Q80 8 68 16Z" fill="#bbb" opacity="0.5"/>
+        <!-- Forehead lines -->
+        <path d="M55 50 Q68 46 80 47 Q92 46 105 50" stroke="#e8a090" stroke-width="1" fill="none" opacity="0.4"/>
+        <!-- Eyebrows — one UP -->
+        <path d="M48 55 Q60 50 68 54" stroke="#666" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M92 49 Q104 43 114 47" stroke="#666" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- Eyes -->
+        <ellipse cx="58" cy="65" rx="9" ry="8" fill="white"/>
+        <ellipse cx="59" cy="66" rx="5.5" ry="5.5" fill="#3d2010"/>
+        <ellipse cx="57" cy="64" rx="1.5" ry="1.5" fill="white"/>
+        <ellipse cx="102" cy="62" rx="9" ry="9" fill="white"/>
+        <ellipse cx="103" cy="63" rx="5.5" ry="5.5" fill="#3d2010"/>
+        <ellipse cx="101" cy="61" rx="1.5" ry="1.5" fill="white"/>
+        <!-- Nose -->
+        <path d="M80 72 Q74 84 72 90 Q80 94 80 92 Q80 94 88 90 Q86 84 80 72Z" fill="#f0a898" opacity="0.65"/>
+        <path d="M72 90 Q80 87 88 90" stroke="#e09080" stroke-width="1.2" fill="none"/>
+        <!-- Mouth — big grin -->
+        <path d="M60 104 Q72 116 80 117 Q88 116 100 104" stroke="#c0706a" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M62 105 Q80 118 98 105 Q88 112 80 113 Q72 112 62 105Z" fill="white"/>
+        <!-- Laugh lines -->
+        <path d="M58 100 Q54 108 56 115" stroke="#e0988a" stroke-width="1.2" fill="none" opacity="0.55"/>
+        <path d="M102 100 Q106 108 104 115" stroke="#e0988a" stroke-width="1.2" fill="none" opacity="0.55"/>
+        <!-- Beard/stubble shadow -->
+        <path d="M60 108 Q80 126 100 108 Q90 128 80 130 Q70 128 60 108Z" fill="#b8967e" opacity="0.2"/>
+        <circle cx="64" cy="116" r="1" fill="#9a7a6a" opacity="0.5"/>
+        <circle cx="70" cy="122" r="1" fill="#9a7a6a" opacity="0.5"/>
+        <circle cx="78" cy="126" r="1" fill="#9a7a6a" opacity="0.5"/>
+        <circle cx="86" cy="126" r="1" fill="#9a7a6a" opacity="0.5"/>
+        <circle cx="94" cy="122" r="1" fill="#9a7a6a" opacity="0.5"/>
+        <circle cx="98" cy="115" r="1" fill="#9a7a6a" opacity="0.5"/>
+        <!-- MIC! -->
+        <rect x="12" y="158" width="10" height="18" rx="5" fill="#333"/>
+        <ellipse cx="17" cy="158" rx="7" ry="8" fill="#222"/>
+        <ellipse cx="17" cy="158" rx="5" ry="6" fill="#444"/>
+        <circle cx="17" cy="156" r="1.5" fill="#666"/>
+        <circle cx="14" cy="159" r="1" fill="#666"/>
+        <circle cx="20" cy="159" r="1" fill="#666"/>
+      </svg>
+    </div>
+
+    <div class="ym-title">☀️ SUMMER CUP ☀️</div>
+    <div class="ym-sub">Synge Street CBS · Are yiz ready?</div>
+
+    <!-- ROOM CODE -->
+    <div style="width:100%;background:rgba(255,255,255,0.04);border-radius:14px;padding:14px;text-align:center;">
+      <div class="room-label">Room Code</div>
+      <div class="room-code" id="room-code">----</div>
+      <div style="font-size:0.62rem;color:rgba(255,255,255,0.3);margin-top:4px;" id="join-url">Loading...</div>
+    </div>
+
+    <!-- PLAYERS -->
+    <div style="width:100%;">
+      <div style="font-size:0.62rem;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">
+        Players <span id="player-count">0</span>/24
+      </div>
+      <div class="player-grid" id="player-grid"></div>
+    </div>
+
+    <!-- MODE SELECT -->
+    <div style="width:100%;">
+      <div style="font-size:0.62rem;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Game Mode</div>
+      <div class="mode-grid">
+        <div class="mode-btn sel" data-mode="turbo" onclick="selectMode(this)">
+          <span class="mode-icon">⚡</span>
+          <div class="mode-name">Turbo</div>
+          <div class="mode-desc">Speed wins. First right answer takes the point.</div>
+        </div>
+        <div class="mode-btn" data-mode="accuracy" onclick="selectMode(this)">
+          <span class="mode-icon">🎯</span>
+          <div class="mode-name">Accuracy</div>
+          <div class="mode-desc">No rushing. Correct answers only.</div>
+        </div>
+        <div class="mode-btn" data-mode="penalty" onclick="selectMode(this)">
+          <span class="mode-icon">💀</span>
+          <div class="mode-name">Penalty</div>
+          <div class="mode-desc">Wrong answer costs ya. Risk it.</div>
+        </div>
+        <div class="mode-btn" data-mode="knockout" onclick="selectMode(this)">
+          <span class="mode-icon">🥊</span>
+          <div class="mode-name">Knockout</div>
+          <div class="mode-desc">Bottom score each round? You're out.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IMPORT -->
+    <div class="import-box" style="width:100%;">
+      <span class="import-label">📋 Paste question set (from any Turbo game)</span>
+      <textarea id="import-ta" placeholder='Paste questions array here e.g. [{q:"...",a:"...",o:["...","...","...","..."]}]'></textarea>
+      <button class="big-btn btn-sec" style="margin-top:8px;" onclick="importQs()">Import Questions</button>
+      <div id="import-status" style="font-size:0.7rem;color:var(--green);margin-top:6px;text-align:center;"></div>
+    </div>
+
+    <button class="big-btn btn-go" onclick="startGame()" id="start-btn">
+      LET'S GO ▶
+    </button>
+    <button class="big-btn btn-sec" onclick="showLeaderboard()">📊 Leaderboard</button>
+
+  </div>
+</div>
+
+<!-- ══ JOIN SCREEN (players) ══ -->
+<div id="join" class="screen">
+  <div class="join-inner">
+    <svg class="join-ym" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="80" cy="196" rx="42" ry="6" fill="rgba(0,0,0,0.35)"/>
+      <path d="M30 140 Q26 175 24 195 L136 195 Q134 175 130 140 Q110 128 95 124 L88 150 L80 142 L72 150 L65 124 Q50 128 30 140Z" fill="#1c2951"/>
+      <path d="M65 124 L72 150 L80 136 L70 122Z" fill="#111d3d"/>
+      <path d="M95 124 L88 150 L80 136 L90 122Z" fill="#111d3d"/>
+      <path d="M70 122 L80 136 L90 122 L86 118 L80 126 L74 118Z" fill="#f5f5f5"/>
+      <path d="M77 120 L80 136 L83 120 L81 116 L79 116Z" fill="#e63946"/>
+      <rect x="68" y="104" width="24" height="24" rx="7" fill="#FDBCB4"/>
+      <ellipse cx="80" cy="72" rx="48" ry="54" fill="#FDBCB4"/>
+      <ellipse cx="32" cy="74" rx="9" ry="12" fill="#FDBCB4"/>
+      <ellipse cx="128" cy="74" rx="9" ry="12" fill="#FDBCB4"/>
+      <ellipse cx="80" cy="26" rx="44" ry="24" fill="#888"/>
+      <path d="M36 38 Q40 14 62 10 Q80 6 98 10 Q120 14 124 38 Q104 22 80 24 Q56 22 36 38Z" fill="#999"/>
+      <path d="M48 55 Q60 50 68 54" stroke="#666" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M92 49 Q104 43 114 47" stroke="#666" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="58" cy="65" rx="9" ry="8" fill="white"/>
+      <ellipse cx="59" cy="66" rx="5.5" ry="5.5" fill="#3d2010"/>
+      <ellipse cx="57" cy="64" rx="1.5" ry="1.5" fill="white"/>
+      <ellipse cx="102" cy="62" rx="9" ry="9" fill="white"/>
+      <ellipse cx="103" cy="63" rx="5.5" ry="5.5" fill="#3d2010"/>
+      <ellipse cx="101" cy="61" rx="1.5" ry="1.5" fill="white"/>
+      <path d="M72 90 Q80 87 88 90" stroke="#e09080" stroke-width="1.2" fill="none"/>
+      <path d="M60 104 Q72 116 80 117 Q88 116 100 104" stroke="#c0706a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M62 105 Q80 118 98 105 Q88 112 80 113 Q72 112 62 105Z" fill="white"/>
+      <rect x="12" y="158" width="10" height="18" rx="5" fill="#333"/>
+      <ellipse cx="17" cy="158" rx="7" ry="8" fill="#222"/>
+      <ellipse cx="17" cy="158" rx="5" ry="6" fill="#444"/>
+    </svg>
+    <div class="join-title">Yer Man's<br/>Summer Cup</div>
+    <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);text-align:center;">Enter your name and join the room</div>
+    <input class="join-input" id="name-input" type="text" placeholder="Your name..." maxlength="18" autocomplete="off"/>
+    <input class="join-input" id="code-input" type="text" placeholder="Room code..." maxlength="4" autocomplete="off"
+      style="letter-spacing:6px;font-size:1.4rem;text-transform:uppercase;"/>
+    <button class="big-btn btn-go" onclick="joinRoom()" style="width:100%;">Join Up ▶</button>
+    <div class="join-wait" id="join-status">Waiting for Yer Man to start...</div>
+  </div>
+</div>
+
+<!-- ══ GAME SCREEN ══ -->
+<div id="game" class="screen">
+  <div class="gbar">
+    <svg class="gbar-ym" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+      <path d="M30 140 Q26 195 24 195 L136 195 Q134 195 130 140 Q110 128 95 124 L88 150 L80 142 L72 150 L65 124 Q50 128 30 140Z" fill="#1c2951"/>
+      <rect x="68" y="104" width="24" height="24" rx="7" fill="#FDBCB4"/>
+      <ellipse cx="80" cy="72" rx="48" ry="54" fill="#FDBCB4"/>
+      <ellipse cx="80" cy="26" rx="44" ry="24" fill="#888"/>
+      <path d="M36 38 Q40 14 62 10 Q80 6 98 10 Q120 14 124 38 Q104 22 80 24 Q56 22 36 38Z" fill="#999"/>
+      <path d="M48 55 Q60 50 68 54" stroke="#666" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M92 49 Q104 43 114 47" stroke="#666" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="58" cy="65" rx="9" ry="8" fill="white"/>
+      <ellipse cx="59" cy="66" rx="5.5" ry="5.5" fill="#3d2010"/>
+      <ellipse cx="102" cy="62" rx="9" ry="9" fill="white"/>
+      <ellipse cx="103" cy="63" rx="5.5" ry="5.5" fill="#3d2010"/>
+      <path d="M60 104 Q72 116 80 117 Q88 116 100 104" stroke="#c0706a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M62 105 Q80 118 98 105 Q88 112 80 113 Q72 112 62 105Z" fill="white"/>
+      <rect x="12" y="158" width="10" height="18" rx="5" fill="#333"/>
+      <ellipse cx="17" cy="158" rx="7" ry="8" fill="#222"/>
+    </svg>
+    <div class="gbar-bubble" id="game-bubble">Right lads, here we go...</div>
+    <div class="gbar-score" id="game-score">0</div>
+  </div>
+  <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+  <div class="qdots" id="qdots"></div>
+  <div class="q-wrap">
+    <div class="q-num" id="q-num">Question 1</div>
+    <div class="q-text" id="q-text">Loading...</div>
+    <div class="opts" id="opts"></div>
+  </div>
+  <button class="nxt" id="nxt-btn" onclick="nextQ()">Ar aghaidh → Next</button>
+</div>
+
+<!-- ══ LEADERBOARD SCREEN ══ -->
+<div id="leaderboard" class="screen">
+  <div class="lb-title">🏆 The Standings</div>
+  <div id="lb-rows"></div>
+  <div style="padding:16px;display:flex;flex-direction:column;gap:8px;">
+    <button class="big-btn btn-go" onclick="show('lobby')">▶ Next Round</button>
+    <button class="big-btn btn-sec" onclick="resetScores()">Reset All Scores</button>
+  </div>
+</div>
+
+<!-- ══ RESULTS ══ -->
+<div id="results" class="screen">
+  <div class="res-inner">
+    <span class="res-em" id="res-em"></span>
+    <div class="res-title" id="res-title"></div>
+    <div class="res-frac" id="res-frac"></div>
+    <div class="res-stars" id="res-stars"></div>
+    <div class="missed" id="missed" style="display:none">
+      <div class="missed-hdr">What ya missed</div>
+      <div id="missed-list"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;width:100%;margin-top:12px;">
+      <button class="big-btn btn-go" onclick="replayGame()">¡Otra vez!</button>
+      <button class="big-btn btn-sec" onclick="show('lobby')">← Back to Lobby</button>
+      <button class="big-btn btn-sec" onclick="showLeaderboard()">📊 Leaderboard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+const WORKER = 'https://still-sun-72cf.seansynge.workers.dev';
+const IS_HOST = window.location.search.includes('host');
+const IS_PLAYER = window.location.search.includes('join');
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let roomCode = '';
+let players = {}; // {name: {score, answered}}
+let questions = [];
+let curQ = 0;
+let gameMode = 'turbo';
+let myName = '';
+let timerInt = null;
+let timeLeft = 0;
+let answered = false;
+let missed = [];
+let correct = 0;
+let pollInt = null;
+
+// ══════════════════════════════════════════
+// DEFAULT QUESTIONS
+// ══════════════════════════════════════════
+const DEFAULT_QS = [
+  {q:'¿Cómo te llamas?',a:'What is your name?',o:['What is your name?','How old are you?','Where do you live?','What do you like?']},
+  {q:'"Hace calor" means?',a:'It is hot',o:['It is hot','It is cold','It is raining','It is windy']},
+  {q:'What is the "yo" form of HABLAR?',a:'hablo',o:['hablo','hablas','habla','hablamos']},
+  {q:'"Buenos días" means?',a:'Good morning',o:['Good morning','Good afternoon','Good night','Goodbye']},
+  {q:'What is the "yo" form of TENER?',a:'tengo',o:['tengo','tienes','tiene','tenemos']},
+  {q:'"Me llamo..." means?',a:'My name is...',o:['My name is...','I am from...','I live in...','I am...']},
+  {q:'"¿Dónde vives?" means?',a:'Where do you live?',o:['Where do you live?','Where do you work?','Where are you from?','Where are you going?']},
+  {q:'What is the "yo" preterite of IR?',a:'fui',o:['fui','iba','iré','voy']},
+  {q:'"La cuenta, por favor" means?',a:'The bill, please',o:['The bill, please','The menu, please','A table, please','Help, please']},
+  {q:'"Estoy de acuerdo" means?',a:'I agree',o:['I agree','I disagree','I understand','I am ready']},
+];
+
+questions = [...DEFAULT_QS];
+
+// ══════════════════════════════════════════
+// YER MAN VOICE — always in the room
+// ══════════════════════════════════════════
+let speaking = false;
+const synth = window.speechSynthesis;
+
+// Line banks
+const LINES = {
+  intro:[
+    "Howiya! The name's Yer Man. Welcome to the Summer Cup. Let's have it!",
+    "Righ' here we go! Yiz are going to be brilliant, I can already tell.",
+    "Welcome welcome welcome! Best of luck to every single one of yiz.",
+    "Lads, I'm delighted to be here. Nearly as delighted as yiz are. Nearly.",
+    "Summer Cup time! Yiz have worked hard all year. This is the fun bit.",
+  ],
+  question:[
+    "Right. Here's one. Yiz've got this.",
+    "Good question this. I think yiz know it.",
+    "C'mon, c'mon. Take yer time now.",
+    "Ooooh. Good one this. Have a think.",
+    "I believe in yiz. Come on.",
+    "Clock's ticking but no rush. Well. A small bit of rush.",
+    "I have a feeling someone's going to nail this one.",
+  ],
+  correct:[
+    "YESSS! Get in! Fair play, fair play!",
+    "Ah would ya look at that! Deadly stuff!",
+    "Gerrourovit! That's the one!",
+    "Lovely. Absolutely lovely. Class answer altogether.",
+    "Now THAT is what I'm talking about!",
+    "Muy bien! That is brilliant. Well done.",
+    "There it is! There it IS! Superb!",
+    "Yes yes YES! I knew yiz had it!",
+    "Fair dues. Fair dues altogether. Top class.",
+  ],
+  wrong:[
+    "Ah Jaybus, not that one! Anyone but that one!",
+    "Ohhh! The answer was RIGHT THERE lads. Right there!",
+    "Me heart. Me actual heart.",
+    "Oooooh so close! That is PAINFUL. Come on, next one.",
+    "No no no — ah look it happens. Head up. Next question.",
+    "The answer is going to haunt me. It really is.",
+    "Ah, unlucky. It's a tough one. Keep going.",
+    "That one caught a few people out. Don't be worrying now.",
+  ],
+  timeout:[
+    "GONE! Ah Jaybus, the clock! The CLOCK lads!",
+    "Time's up! But sure ya know it now — that's the main thing.",
+    "Ohhh, a second too slow! Come on, next one is yours.",
+    "The clock waits for no one. Not even Yer Man himself.",
+  ],
+  leaderboard:[
+    "Right. Let's see how everyone's getting on.",
+    "Yiz are all doing brilliantly. Let's have a look.",
+    "The standings! Everyone should be proud of themselves.",
+    "Look at that. Serious effort from everyone up there.",
+  ],
+  dramatic:[
+    "And the answer is...",
+    "Ooh. Let me just check that...",
+    "Drumroll please...",
+    "The moment of truth...",
+  ],
+  topplayer:[
+    " is absolutely flying it up there. Deadly stuff.",
+    " top of the leaderboard. Fair play!",
+    " who saw that coming? Outstanding.",
+  ],
+  idle:[
+    "Take yer time. No pressure. Well. A tiny bit of pressure.",
+    "Yiz are doing great. Keep it going.",
+    "Synge Street CBS. Best in the city. Prove it.",
+    "I'm rooting for every single one of yiz. Every. Single. One.",
+    "Eyes on the screen. Not on your man beside ya.",
+    "Right. Focus now. I believe in yiz. Mostly.",
+    "Come on the lads. Let's have it.",
+    "Someone in this room knows this. I can feel it.",
+    "I've seen worse. I've also seen better. But mostly worse.",
+  ],
+};
+
+function rand(arr){return arr[Math.floor(Math.random()*arr.length)];}
+
+function speak(text, rate=1.05, pitch=1.05){
+  if(!synth) return;
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  // Pick best available voice — prefer Irish/British
+  const voices = synth.getVoices();
+  const pref = voices.find(v=>v.lang==='en-IE')
+    || voices.find(v=>v.name.includes('Irish'))
+    || voices.find(v=>v.lang==='en-GB')
+    || voices.find(v=>v.lang.startsWith('en'));
+  if(pref) u.voice = pref;
+  u.rate = rate;
+  u.pitch = pitch;
+  u.volume = 1;
+  synth.speak(u);
+  setBubble(text);
+}
+
+function setBubble(text){
+  const b = document.getElementById('lobby-bubble');
+  const g = document.getElementById('game-bubble');
+  if(b) b.textContent = text;
+  if(g) g.textContent = text;
+}
+
+// Idle chatter — he never shuts up
+let idleInt = null;
+function startIdle(){
+  clearInterval(idleInt);
+  idleInt = setInterval(()=>{
+    if(!synth.speaking){
+      speak(rand(LINES.idle), 1.0, 1.05);
+    }
+  }, 12000);
+}
+
+// Voices load async on some browsers
+synth.onvoiceschanged = ()=>{};
+
+// ══════════════════════════════════════════
+// SCREEN SWITCHING
+// ══════════════════════════════════════════
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+
+// ══════════════════════════════════════════
+// MODE SELECT
+// ══════════════════════════════════════════
+function selectMode(el){
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  gameMode = el.dataset.mode;
+}
+
+// ══════════════════════════════════════════
+// IMPORT QUESTIONS
+// ══════════════════════════════════════════
+function importQs(){
+  const ta = document.getElementById('import-ta').value.trim();
+  const st = document.getElementById('import-status');
+  if(!ta){st.textContent='Paste something in first!';st.style.color='#FF4D4D';return;}
+
+  let all = [];
+
+  // Strategy 1: hunt for every {q:... a:... o:[...]} object in the raw text
+  // Works on full Turbo HTML files pasted in, or just a questions array
+  const qMatches = [...ta.matchAll(/\{[^{}]*?q\s*:\s*['"`](.+?)['"`][^{}]*?a\s*:\s*['"`](.+?)['"`][^{}]*?o\s*:\s*(\[[^\]]+\])[^{}]*?\}/gs)];
+  qMatches.forEach(m=>{
+    try{
+      const oRaw = m[3].replace(/'/g,'"');
+      const o = JSON.parse(oRaw);
+      if(Array.isArray(o) && o.length) all.push({q:m[1], a:m[2], o});
+    }catch{}
+  });
+
+  // Strategy 2: find qs:[...] blocks (Turbo format)
+  if(!all.length){
+    const blocks = [...ta.matchAll(/qs\s*:\s*\[/g)];
+    blocks.forEach(b=>{
+      let depth=0, start=b.index+b[0].length-1, i=start;
+      while(i<ta.length){
+        if(ta[i]==='[') depth++;
+        else if(ta[i]===']'){depth--;if(depth===0){break;}}
+        i++;
+      }
+      try{
+        const chunk = ta.slice(start, i+1)
+          .replace(/(\w+)\s*:/g, '"$1":')  // unquoted keys -> quoted
+          .replace(/'/g, '"');             // single -> double quotes
+        const parsed = JSON.parse(chunk);
+        if(Array.isArray(parsed)) all = [...all, ...parsed.filter(x=>x.q&&x.a&&x.o)];
+      }catch{}
+    });
+  }
+
+  // Strategy 3: try parsing as raw JSON array
+  if(!all.length){
+    try{
+      const parsed = JSON.parse(ta);
+      if(Array.isArray(parsed)) all = parsed.filter(x=>x.q&&x.a&&x.o);
+    }catch{}
+  }
+
+  if(all.length){
+    questions = all;
+    st.textContent = `✓ ${questions.length} questions loaded! Let's go.`;
+    st.style.color = '#4CAF50';
+    speak(`Right! ${questions.length} questions loaded up. Yiz are in trouble now.`);
+  } else {
+    st.textContent = 'Hmm — try copying the whole script section from the Turbo HTML file.';
+    st.style.color = '#FF4D4D';
+  }
+}
+
+// ══════════════════════════════════════════
+// ROOM / WORKER
+// ══════════════════════════════════════════
+function genCode(){
+  return Math.random().toString(36).substr(2,4).toUpperCase();
+}
+
+async function createRoom(){
+  roomCode = genCode();
+  document.getElementById('room-code').textContent = roomCode;
+  const base = window.location.href.split('?')[0];
+  document.getElementById('join-url').textContent = base+'?join — code: '+roomCode;
+  await syncRoom('create');
+  pollPlayers();
+}
+
+async function syncRoom(action, data={}){
+  try{
+    const r = await fetch(WORKER+'/room', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action, room:roomCode, ...data})
+    });
+    return await r.json();
+  }catch(e){
+    console.warn('Worker offline, running local',e);
+    return {ok:true, local:true};
+  }
+}
+
+function pollPlayers(){
+  clearInterval(pollInt);
+  pollInt = setInterval(async()=>{
+    try{
+      const r = await fetch(`${WORKER}/room?room=${roomCode}&action=players`);
+      const d = await r.json();
+      if(d.players) updatePlayerList(d.players);
+    }catch{}
+  }, 2000);
+}
+
+function updatePlayerList(playerData){
+  players = playerData;
+  const grid = document.getElementById('player-grid');
+  const count = document.getElementById('player-count');
+  const names = Object.keys(playerData);
+  count.textContent = names.length;
+  grid.innerHTML = names.map(n=>`
+    <div class="player-chip">
+      <div class="player-dot"></div>
+      <span>${escHtml(n)}</span>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════
+// JOIN (player side)
+// ══════════════════════════════════════════
+async function joinRoom(){
+  const name = document.getElementById('name-input').value.trim();
+  const code = document.getElementById('code-input').value.trim().toUpperCase();
+  if(!name){alert('What\'s yer name?!');return;}
+  if(!code || code.length!==4){alert('Need the 4-letter room code!');return;}
+  myName = name;
+  roomCode = code;
+  try{
+    await fetch(WORKER+'/room',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'join',room:code,name})
+    });
+  }catch{}
+  document.getElementById('join-status').textContent = `Waiting for Yer Man... (${name})`;
+  speak(`${name} is in the room. Let's see what ya've got.`);
+  // Poll for game start
+  const si = setInterval(async()=>{
+    try{
+      const r = await fetch(`${WORKER}/room?room=${code}&action=state`);
+      const d = await r.json();
+      if(d.state==='playing'){
+        clearInterval(si);
+        loadPlayerGame(d);
+      }
+    }catch{}
+  }, 1500);
+}
+
+function loadPlayerGame(data){
+  questions = data.questions || questions;
+  gameMode = data.mode || gameMode;
+  curQ = 0; correct = 0; missed = [];
+  show('game');
+  speak(rand(LINES.intro));
+  setTimeout(()=>showQ(), 1800);
+}
+
+// ══════════════════════════════════════════
+// GAME ENGINE
+// ══════════════════════════════════════════
+function startGame(){
+  if(!questions.length){speak('Lads, there are no questions loaded. Sort that out.');return;}
+  clearInterval(pollInt);
+  const qs = shuffle([...questions]).slice(0,Math.min(questions.length,15));
+  questions = qs;
+  curQ = 0; correct = 0; missed = []; answered = false;
+
+  // Tell worker game is starting
+  syncRoom('start',{questions:qs, mode:gameMode});
+
+  show('game');
+  buildDots();
+  speak(rand(LINES.intro));
+  setTimeout(()=>showQ(), 2000);
+  startIdle();
+}
+
+function buildDots(){
+  const c = document.getElementById('qdots');
+  c.innerHTML = '';
+  questions.forEach((_,i)=>{
+    const d = document.createElement('div');
+    d.className='qdot'+(i===0?' now':'');
+    d.id='dot-'+i;
+    c.appendChild(d);
+  });
+}
+
+function showQ(){
+  answered = false;
+  const q = questions[curQ];
+  if(!q){endGame();return;}
+  document.getElementById('q-num').textContent = `Question ${curQ+1} of ${questions.length} · ${modeLabel()}`;
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('nxt-btn').classList.remove('on');
+
+  // Options
+  const opts = document.getElementById('opts');
+  opts.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  shuffle([...q.o]).forEach((opt,i)=>{
+    const b = document.createElement('button');
+    b.className='opt';
+    b.innerHTML=`<span class="opt-ltr">${letters[i]}</span>${escHtml(opt)}`;
+    b.addEventListener('click',()=>pick(b,opt,q.a,q.q));
+    opts.appendChild(b);
+  });
+
+  // Score display
+  document.getElementById('game-score').textContent = correct;
+
+  // Timer
+  clearTimer();
+  timeLeft = 15;
+  updateTimer(100);
+  timerInt = setInterval(()=>{
+    timeLeft -= 0.1;
+    updateTimer((timeLeft/15)*100);
+    if(timeLeft<=0){clearTimer();timeout();}
+  },100);
+
+  // Yer Man announces question
+  setTimeout(()=>{
+    speak(rand(LINES.question)+' '+q.q, 1.0);
+  }, 300);
+}
+
+function modeLabel(){
+  return {turbo:'⚡Turbo',accuracy:'🎯Accuracy',penalty:'💀Penalty',knockout:'🥊Knockout'}[gameMode]||'';
+}
+
+function updateTimer(pct){
+  document.getElementById('timer-fill').style.width = Math.max(0,pct)+'%';
+}
+
+function clearTimer(){
+  if(timerInt){clearInterval(timerInt);timerInt=null;}
+}
+
+function timeout(){
+  answered = true;
+  const q = questions[curQ];
+  missed.push({q:q.q,a:q.a});
+  document.querySelectorAll('.opt').forEach(b=>{
+    const txt = b.textContent.slice(1).trim();
+    if(txt===q.a) b.className='opt reveal';
+    b.disabled=true;
+  });
+  if(gameMode==='penalty'){correct=Math.max(0,correct-1);}
+  dotMark(curQ,'no');
+  speak(rand(LINES.timeout));
+  flash('#FF4D4D');
+  document.getElementById('game-score').textContent=correct;
+  document.getElementById('nxt-btn').classList.add('on');
+  reportAnswer(false);
+}
+
+function pick(btn, chosen, correct_a, qText){
+  if(answered) return;
+  answered = true;
+  clearTimer();
+  const isRight = chosen===correct_a;
+
+  document.querySelectorAll('.opt').forEach(b=>{
+    b.disabled=true;
+    const txt=b.textContent.slice(1).trim();
+    if(txt===correct_a) b.className='opt'+(isRight&&b===btn?' correct':' reveal');
+    else if(b===btn&&!isRight) b.className='opt wrong';
+  });
+
+  if(isRight){
+    correct++;
+    dotMark(curQ,'ok');
+    flash('#4CAF50');
+    // dramatic pause before praise
+    const drama = rand(LINES.dramatic);
+    speak(drama, 0.9, 1.1);
+    setTimeout(()=>speak(rand(LINES.correct),1.1,1.1), 1200);
+  } else {
+    if(gameMode==='penalty') correct=Math.max(0,correct-1);
+    missed.push({q:qText,a:correct_a});
+    dotMark(curQ,'no');
+    flash('#FF4D4D');
+    speak(rand(LINES.wrong));
+  }
+  document.getElementById('game-score').textContent=correct;
+  document.getElementById('nxt-btn').classList.add('on');
+  reportAnswer(isRight);
+}
+
+function dotMark(i,cls){
+  const d=document.getElementById('dot-'+i);
+  if(d)d.className='qdot '+cls;
+  const n=document.getElementById('dot-'+(i+1));
+  if(n)n.className='qdot now';
+}
+
+function flash(color){
+  const f=document.getElementById('flash');
+  f.style.background=color;
+  f.style.opacity='0.18';
+  f.classList.add('go');
+  setTimeout(()=>{f.style.opacity='0';},300);
+}
+
+function nextQ(){
+  curQ++;
+  if(curQ>=questions.length){endGame();return;}
+  showQ();
+}
+
+async function reportAnswer(isRight){
+  try{
+    await fetch(WORKER+'/answer',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({room:roomCode,name:myName,correct:isRight,q:curQ,mode:gameMode})
+    });
+  }catch{}
+}
+
+function endGame(){
+  clearTimer();
+  clearInterval(idleInt);
+  const total=questions.length;
+  const pct=Math.round(correct/total*100);
+  let emoji,title;
+  if(pct===100){emoji='🏆';title='Unreal! Absolutely unreal!';}
+  else if(pct>=80){emoji='🔥';title='Flying it!';}
+  else if(pct>=60){emoji='👍';title='Not bad, not bad.';}
+  else if(pct>=40){emoji='😅';title='Ah we\'ll work on it.';}
+  else{emoji='💪';title='Look. We all have off days.';}
+
+  document.getElementById('res-em').textContent=emoji;
+  document.getElementById('res-title').textContent=title;
+  document.getElementById('res-frac').textContent=`${correct}/${total}`;
+  document.getElementById('res-frac').style.color=pct>=80?'#4CAF50':pct>=50?'#FFD93D':'#FF4D4D';
+  document.getElementById('res-stars').textContent='⭐'.repeat(pct>=80?3:pct>=50?2:pct>=30?1:0);
+
+  if(missed.length){
+    document.getElementById('missed').style.display='block';
+    document.getElementById('missed-list').innerHTML=missed.map(m=>`
+      <div class="missed-row">
+        <div class="missed-q">${escHtml(m.q)}</div>
+        <div class="missed-a">✓ ${escHtml(m.a)}</div>
+      </div>`).join('');
+  } else {
+    document.getElementById('missed').style.display='none';
+  }
+
+  // Yer Man's verdict
+  const verdicts=[
+    `${correct} out of ${total}. ${pct>=80?'Get in!':pct>=50?'Grand, I suppose.':'We\'ll say nothing.'}`,
+    `${pct} percent. ${pct>=80?'I\'m not even surprised. Quality.':pct>=50?'Could be worse. Could be better.':'Look. Tomorrow is another day.'}`,
+  ];
+  speak(rand(verdicts));
+  syncRoom('score',{name:myName,score:correct});
+  show('results');
+}
+
+function replayGame(){
+  curQ=0;correct=0;missed=[];answered=false;
+  questions=shuffle([...questions]);
+  show('game');
+  buildDots();
+  speak("Right. Again. Let's see if yiz learned anything.");
+  setTimeout(showQ,1800);
+}
+
+// ══════════════════════════════════════════
+// LEADERBOARD
+// ══════════════════════════════════════════
+function showLeaderboard(){
+  const rows = document.getElementById('lb-rows');
+  const sorted = Object.entries(players)
+    .sort((a,b)=>b[1].score-a[1].score);
+  const max = sorted.length ? sorted[0][1].score||1 : 1;
+  const medals=['🥇','🥈','🥉'];
+  rows.innerHTML = sorted.map(([name,data],i)=>`
+    <div class="lb-row">
+      <div class="lb-pos ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${medals[i]||i+1}</div>
+      <div style="flex:1">
+        <div class="lb-name">${escHtml(name)}</div>
+        <div class="lb-bar-wrap"><div class="lb-bar" style="width:${Math.round((data.score||0)/max*100)}%"></div></div>
+      </div>
+      <div class="lb-score">${data.score||0}</div>
+    </div>
+  `).join('');
+
+  if(sorted.length){
+    const top = sorted[0][0];
+    speak(rand(LINES.leaderboard)+' '+top+rand(LINES.topplayer));
+  } else {
+    speak(rand(LINES.leaderboard));
+  }
+  show('leaderboard');
+}
+
+function resetScores(){
+  if(!confirm('Reset all scores?')) return;
+  Object.keys(players).forEach(n=>players[n].score=0);
+  syncRoom('reset');
+  speak('Slate wiped. Starting fresh. May the best man win.');
+  showLeaderboard();
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function shuffle(a){return a.sort(()=>Math.random()-0.5);}
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.addEventListener('load',()=>{
+  // Detect mode from URL
+  if(IS_PLAYER){
+    show('join');
+    // Yer Man greets the joiner
+    setTimeout(()=>speak("Howiya. What's the story? Enter yer name and the room code and we'll get going.",1.0),500);
+  } else {
+    // Host mode
+    show('lobby');
+    createRoom();
+    setTimeout(()=>{
+      speak(rand(LINES.intro));
+      startIdle();
+    },800);
+  }
+});
+</script>
+
+</body>
+</html>
