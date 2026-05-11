@@ -988,7 +988,8 @@ function genCode(){
 async function createRoom(){
   roomCode = genCode();
   document.getElementById('room-code').textContent = roomCode;
-  const base = window.location.href.split('?')[0];
+  // Always point QR directly at yerman-game.html — never root URL
+  const base = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/') + 'yerman-game.html';
   const joinURL = base + '?join&room=' + roomCode;
 
   // Wait for QRCode library to be ready (loaded async via script tag)
